@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>SchoolLedger — School Finance & Billing</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="theme-color" content="#2563eb">
+<style>
+  :root{
+    --bg:#0e1014; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+    --txt:#e8eaef; --muted:#98a1b3; --ink:#0a0c10;
+    --admin:#2563eb; --collector:#059669; --teacher:#7c3aed;
+    --good:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+    --brand:#2563eb; --brand2:#1d4ed8;
+    --shadow:0 8px 24px rgba(0,0,0,.38); --radius:14px;
+  }
+  body.theme-light{
+    --bg:#f3f5f8; --panel:#ffffff; --panel2:#eef1f5; --line:#e3e7ee;
+    --txt:#161a20; --muted:#6b7280; --ink:#ffffff;
+    --shadow:0 8px 22px rgba(15,23,42,.10);
+  }
+  body.theme-light #launch{background:radial-gradient(1200px 600px at 50% -10%, #e9eef6 0%, var(--bg) 60%)}
+  body.theme-light .kpi{box-shadow:0 1px 3px rgba(15,23,42,.08)}
+  body.theme-light .pcard{box-shadow:0 1px 3px rgba(15,23,42,.08)}
+  body.theme-light .ticket{box-shadow:0 1px 3px rgba(15,23,42,.08)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:15px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .hidden{display:none!important}
+  header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);box-shadow:0 1px 0 var(--line),0 6px 18px rgba(0,0,0,.25);z-index:30}
+  header h1{font-size:17px;margin:0;flex:1;letter-spacing:.2px}
+  .role-chip{font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+  .btn{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:11px 16px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(37,99,235,.25);transition:filter .12s}
+  .btn:active{filter:brightness(.92)}
+  .btn.ghost{background:var(--panel2);color:var(--txt);box-shadow:none}
+  .btn.sm{padding:8px 12px;font-size:13px}
+  .btn.green{background:var(--good);color:#052e16;box-shadow:none}
+  .btn.purple{background:var(--teacher);color:#fff;box-shadow:none}
+  .btn.warn{background:var(--warn);color:#3a2a00;box-shadow:none}
+  .tabbar{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line);overflow-x:auto;background:var(--bg)}
+  .tab{padding:9px 15px;border-radius:999px;background:var(--panel);color:var(--muted);white-space:nowrap;cursor:pointer;font-size:13px;font-weight:600;border:1px solid transparent}
+  .tab.on{background:var(--brand);color:#fff;border-color:var(--brand2)}
+  .view{display:none;padding:14px 16px 90px}
+  .view.on{display:block}
+  .grid{display:grid;gap:10px}
+  .cards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .pcard{background:var(--panel);border-radius:var(--radius);padding:13px;cursor:pointer;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .pcard:active{transform:scale(.98)}
+  .pcard .nm{font-weight:700}
+  .pcard .pr{color:var(--brand);font-weight:800;margin-top:4px}
+  .pcard .st{color:var(--muted);font-size:12px;margin-top:6px}
+  .pcard.low{border-color:var(--warn)}
+  .pcard.low .st{color:var(--warn)}
+  .ticket{background:var(--panel);border-radius:var(--radius);padding:13px;margin-bottom:10px;border-left:4px solid var(--brand);box-shadow:var(--shadow)}
+  .ticket .top{display:flex;justify-content:space-between;align-items:center}
+  .ticket .tt{font-weight:700;font-size:16px}
+  .line{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .line .q{color:var(--muted);width:30px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  input,select,textarea{background:var(--ink);color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:10px;font-size:14px;width:100%;font-family:inherit}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;backdrop-filter:blur(3px)}
+  .modal.on{display:flex}
+  .modal#pinModal{z-index:200}
+  .sheet{background:var(--panel);border-radius:18px;width:100%;max-width:460px;max-height:88vh;overflow:auto;padding:18px;border:1px solid var(--line);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .sheet h3{margin:0 0 12px}
+  .paybtn{flex:1;text-align:center;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--panel2)}
+  .paybtn.cash{background:#14532d;color:#bbf7d0;border-color:#166534}
+  .paybtn.momo{background:#1e3a5f;color:#bae6fd;border-color:#1d4ed8}
+  .kpi{background:var(--panel);border-radius:var(--radius);padding:15px;border:1px solid var(--line);box-shadow:var(--shadow);min-width:0}
+  .kpi .n{font-size:20px;font-weight:800;letter-spacing:.2px;line-height:1.15;overflow-wrap:anywhere;word-break:break-word}
+  .kpi .l{color:var(--muted);font-size:12px;margin-top:4px}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700}
+  .pill.active{background:#1d4ed8;color:#fff}
+  .pill.suspended{background:#7f1d1d;color:#fecaca}
+  .pill.paid{background:#15803d;color:#fff}
+  .pill.due{background:#b45309;color:#fff}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#04141f;border:1px solid var(--line);padding:10px 16px;border-radius:10px;display:none;z-index:210}
+  .toast.on{display:block}
+  .muted{color:var(--muted)}
+  .small{font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted)}
+  .addfoot{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;background:var(--bg);border-top:1px solid var(--line);display:flex;gap:10px;z-index:40}
+  #launch{position:fixed;inset:0;background:radial-gradient(1200px 600px at 50% -10%, #1c2230 0%, var(--bg) 60%);display:flex;flex-direction:column;justify-content:center;padding:24px;z-index:90}
+  #launch h2{text-align:center;font-size:23px;margin:0 0 4px;letter-spacing:.3px}
+  #launch p.sub{text-align:center;color:var(--muted);margin:0 0 26px}
+  .rolebtn{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:16px;font-size:18px;font-weight:800;margin-bottom:14px;cursor:pointer;border:1px solid var(--line);color:var(--txt);background:var(--panel);box-shadow:var(--shadow);text-align:left}
+  .rolebtn small{font-weight:500;font-size:12px;opacity:.7;display:block;margin-top:2px}
+  .rolebtn .ricon-sm{width:42px;height:42px;border-radius:12px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+  .rolebtn .ricon-sm svg{width:24px;height:24px}
+  .rolebtn.admin{border-left:4px solid var(--admin)}
+  .rolebtn.collector{border-left:4px solid var(--collector)}
+  .rolebtn.teacher{border-left:4px solid var(--teacher)}
+  .banner{position:sticky;top:56px;z-index:25;padding:6px 14px;font-size:12px;font-weight:700}
+  .banner.off{background:#3a0d0d;color:#fecaca;border-bottom:1px solid #7f1d1d}
+  .banner.ok{background:#052e16;color:#bbf7d0;border-bottom:1px solid #166534}
+  .pinbox{display:flex;gap:8px;justify-content:center;margin:16px 0}
+  .pinbox input{width:46px;text-align:center;font-size:22px;letter-spacing:6px;padding:8px}
+  .lockbtn{position:fixed;right:14px;bottom:14px;z-index:40;border-radius:50%;width:54px;height:54px;font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.45);border:1px solid var(--line)}
+  .lockbtn:active{transform:scale(.94)}
+  .role-hero{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;background:var(--panel);margin-bottom:12px}
+  .role-hero .ricon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .role-hero .ricon svg{width:30px;height:30px;display:block}
+  .role-hero .rtxt h3{margin:0;font-size:16px}
+  .role-hero .rtxt p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+  .ricon.admin{background:rgba(37,99,235,.16);color:#60a5fa}
+  .ricon.collector{background:rgba(5,150,105,.16);color:#34d399}
+  .ricon.teacher{background:rgba(124,58,237,.16);color:#c084fc}
+  .searchbar{display:flex;gap:8px;margin-bottom:12px}
+  .searchbar input{flex:1}
+  .owes{font-size:22px;font-weight:800;color:var(--bad)}
+  .owes.clear{color:var(--good)}
+  .itemrow{display:flex;gap:8px;margin-bottom:8px}
+  .itemrow input:first-child{flex:2}
+  .itemrow input:last-child{flex:1}
+  @media print{
+    body *{visibility:hidden}
+    #receiptCard,#receiptCard *{visibility:visible}
+    #receiptCard{position:absolute;left:0;top:0;width:100%;background:#fff!important;color:#000!important}
+    #receiptCard .muted{color:#555!important}
+  }
+</style>
+</head>
+<body>
+
+<!-- LAUNCH / ROLE PICKER -->
+<div id="launch">
+  <h2>SchoolLedger</h2>
+  <p class="sub">School Finance & Billing — choose your role to start</p>
+  <button class="rolebtn admin" onclick="pickRole('admin')"><span class="ricon-sm admin" data-ricon="admin"></span><span>Admin<small>Manage students, fee templates & dashboard</small></span></button>
+  <button class="rolebtn collector" onclick="pickRole('collector')"><span class="ricon-sm collector" data-ricon="collector"></span><span>Collector<small>Search students & record fee payments</small></span></button>
+  <button class="rolebtn teacher" onclick="pickRole('teacher')"><span class="ricon-sm teacher" data-ricon="teacher"></span><span>Teacher<small>Read-only dashboard & balances</small></span></button>
+  <p class="small muted" style="text-align:center;margin-top:18px">Offline-first. Works without internet — all data stays on this device.<br>⚡ Powered by <b>Providers Consultancy</b></p>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <button class="lockbtn" onclick="lockSession()" title="Lock session (requires PIN to reopen)">🔒</button>
+  <header>
+    <h1 id="appTitle">SchoolLedger</h1>
+    <span class="role-chip" id="roleChip"></span>
+    <button class="btn ghost sm" onclick="toggleTheme()" title="Toggle dark / light">🌓</button>
+    <button class="btn ghost sm" onclick="goLaunch()">Switch</button>
+  </header>
+
+  <!-- ADMIN -->
+  <div id="role-admin" class="roleview hidden">
+    <div class="role-hero">
+      <div class="ricon admin" data-ricon="admin"></div>
+      <div class="rtxt"><h3>Admin · School Management</h3><p>Students, fee templates, dashboard & settings</p></div>
+    </div>
+    <div class="tabbar">
+      <div class="tab on" data-av="adash" onclick="switchA('adash')">Dashboard</div>
+      <div class="tab" data-av="astu" onclick="switchA('astu')">Students</div>
+      <div class="tab" data-av="atem" onclick="switchA('atem')">Fee Templates</div>
+      <div class="tab" data-av="aset" onclick="switchA('aset')">Settings</div>
+    </div>
+    <div class="view on" id="av-adash"><div id="adminDash"></div></div>
+    <div class="view" id="av-astu">
+      <div class="row"><button class="btn" onclick="openStudentForm()">+ Add Student</button></div>
+      <div id="studentList"></div>
+    </div>
+    <div class="view" id="av-atem">
+      <div class="row"><button class="btn" onclick="openTemplateForm()">+ Add Fee Template</button></div>
+      <div id="templateList"></div>
+    </div>
+    <div class="view" id="av-aset"><div id="adminSet"></div></div>
+  </div>
+
+  <!-- COLLECTOR -->
+  <div id="role-collector" class="roleview hidden">
+    <div class="role-hero">
+      <div class="ricon collector" data-ricon="collector"></div>
+      <div class="rtxt"><h3>Collector · Fee Collection</h3><p>Search a student and record payments</p></div>
+    </div>
+    <div class="searchbar">
+      <input id="searchBox" placeholder="Search by name, ID or class…" oninput="renderSearch()">
+    </div>
+    <div id="searchResults"></div>
+  </div>
+
+  <!-- TEACHER (read-only) -->
+  <div id="role-teacher" class="roleview hidden">
+    <div class="role-hero">
+      <div class="ricon teacher" data-ricon="teacher"></div>
+      <div class="rtxt"><h3>Teacher · Read-only</h3><p>View dashboard & student balances (no edits)</p></div>
+    </div>
+    <div class="tabbar">
+      <div class="tab on" data-tv="tdash" onclick="switchT('tdash')">Dashboard</div>
+      <div class="tab" data-tv="tstu" onclick="switchT('tstu')">Students</div>
+    </div>
+    <div class="view on" id="tv-tdash"><div id="teacherDash"></div></div>
+    <div class="view" id="tv-tstu"><div id="teacherStudents"></div></div>
+  </div>
+</div>
+
+<!-- PIN MODAL -->
+<div class="modal" id="pinModal">
+  <div class="sheet" style="max-width:360px;text-align:center">
+    <h3 id="pinTitle">Enter PIN</h3>
+    <p class="small muted" id="pinHint">Default PIN is 0000</p>
+    <div class="pinbox">
+      <input id="p1" maxlength="1" inputmode="numeric"><input id="p2" maxlength="1" inputmode="numeric"><input id="p3" maxlength="1" inputmode="numeric"><input id="p4" maxlength="1" inputmode="numeric">
+    </div>
+    <div class="row" style="justify-content:center">
+      <button class="btn ghost" onclick="closeModal('pinModal');if(pendingPinCancel)pendingPinCancel()">Cancel</button>
+      <button class="btn purple" onclick="checkPin()">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENT FORM MODAL -->
+<div class="modal" id="studentModal">
+  <div class="sheet">
+    <h3>Add Student</h3>
+    <input id="sName" placeholder="Full name (e.g. Kofi Mensah)">
+    <input id="sClass" placeholder="Class (e.g. Basic 4A)" style="margin-top:8px">
+    <input id="sGuardian" placeholder="Guardian name" style="margin-top:8px">
+    <input id="sPhone" placeholder="Guardian phone (for WhatsApp receipts)" style="margin-top:8px">
+    <input id="sEmail" placeholder="Guardian email (optional)" style="margin-top:8px">
+    <label class="small muted" style="display:block;margin-top:10px">Opening fee (select template)</label>
+    <select id="sTemplate" style="margin-top:6px"></select>
+    <div class="row" style="margin-top:14px;justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal('studentModal')">Cancel</button>
+      <button class="btn green" onclick="saveStudent()">Save Student</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEE TEMPLATE MODAL -->
+<div class="modal" id="templateModal">
+  <div class="sheet">
+    <h3>Add Fee Template</h3>
+    <input id="tName" placeholder="Template name (e.g. Basic 4 - Term 1)">
+    <p class="small muted" style="margin-top:10px">Fee items</p>
+    <div id="tItems"></div>
+    <div class="row"><button class="btn sm ghost" onclick="tAddRow()">+ Add item</button></div>
+    <div id="tTotal" style="font-weight:800;font-size:18px;margin:10px 0"></div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal('templateModal')">Cancel</button>
+      <button class="btn green" onclick="saveTemplate()">Save Template</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal" id="payModal">
+  <div class="sheet">
+    <h3>Record Payment</h3>
+    <div id="payStudent" class="muted" style="margin-bottom:8px"></div>
+    <label class="small muted">Amount paying now (GHS)</label>
+    <input id="payAmount" type="number" placeholder="0">
+    <label class="small muted" style="display:block;margin-top:10px">Payment method</label>
+    <select id="payMethod" style="margin-top:6px">
+      <option value="Cash">Cash</option>
+      <option value="MTN MoMo">MTN MoMo</option>
+      <option value="Bank Transfer">Bank Transfer</option>
+    </select>
+    <div class="row" style="margin-top:14px;justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal('payModal')">Cancel</button>
+      <button class="btn green" onclick="recordPayment()">Record Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT MODAL (wa.me + print fallback) -->
+<div class="modal" id="receiptModal">
+  <div class="sheet" id="receiptCard">
+    <h3>Receipt</h3>
+    <div id="receiptBody"></div>
+    <div class="row" style="justify-content:center;margin-top:10px">
+      <button class="btn green" id="waBtn" onclick="sendWhatsAppReceipt()">📲 Send WhatsApp</button>
+      <button class="btn ghost" onclick="printReceipt()">🖨 Print</button>
+      <button class="btn ghost" onclick="closeModal('receiptModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============== SchoolLedger MVP — vanilla offline-first PWA ==============
+   Reuses the FieldBar POS architecture: roles + PIN auth from localStorage,
+   offline-first storage, manifest/sw, print styles, dark/light theme.
+   Domain re-skinned: students / feeTemplates / feeTransactions. */
+
+const STORE_KEY = 'schoolledger_v1';
+const SCHOOL_NAME = 'Your School';
+
+function defaultDB(){
+  return {
+    settings:{ theme:'dark', pins:{ admin:'0000', collector:'0000', teacher:'0000' } },
+    students: [],
+    feeTemplates: [
+      { templateName:'Basic 4 - Term 1', items:[ {name:'Tuition',amount:2500},{name:'PTA Dues',amount:200},{name:'Transport',amount:300} ], totalFee:3000 }
+    ],
+    feeTransactions: []
+  };
+}
+
+let DB = load();
+let currentRole = null;
+let pendingPinResolve = null;
+let pendingPinCancel = null;
+let activeStudentId = null;
+let lastReceipt = null;
+
+function load(){
+  try{ const raw = localStorage.getItem(STORE_KEY); if(raw) return Object.assign(defaultDB(), JSON.parse(raw)); }catch(e){}
+  return defaultDB();
+}
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(DB)); }catch(e){} }
+
+/* ---------- theme + icons ---------- */
+function applyTheme(){ document.body.classList.toggle('theme-light', DB.settings.theme==='light'); }
+function paintIcons(){
+  const ICONS = {
+    admin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01"/></svg>',
+    collector:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+    teacher:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/></svg>'
+  };
+  document.querySelectorAll('[data-ricon]').forEach(el=>{ el.innerHTML = ICONS[el.getAttribute('data-ricon')]||''; });
+}
+function toggleTheme(){ DB.settings.theme = DB.settings.theme==='dark'?'light':'dark'; applyTheme(); save(); }
+
+/* ---------- role + PIN auth ---------- */
+function pickRole(role){
+  openPin(role, ()=>enterRole(role), ()=>{});
+}
+function openPin(role, onOk, onCancel){
+  pendingPinCancel = onCancel;
+  document.getElementById('pinTitle').textContent = 'Enter ' + role.toUpperCase() + ' PIN';
+  document.getElementById('pinHint').textContent = 'Default PIN is ' + (DB.settings.pins[role]||'0000');
+  ['p1','p2','p3','p4'].forEach(id=>document.getElementById(id).value='');
+  openModal('pinModal');
+  pendingPinResolve = ()=>{ closeModal('pinModal'); onOk(); };
+}
+function checkPin(){
+  const entered = ['p1','p2','p3','p4'].map(id=>document.getElementById(id).value).join('');
+  const expected = DB.settings.pins[currentRole] || DB.settings.pins[Object.keys(DB.settings.pins)[0]];
+  // currentRole may not be set on first entry; resolve against the role the modal asks for
+  const title = document.getElementById('pinTitle').textContent || '';
+  const askRole = (title.match(/Enter (\w+) PIN/i)||[])[1];
+  const lowerAsk = (askRole||'').toLowerCase();
+  const exp = DB.settings.pins[lowerAsk] || expected;
+  if(entered === exp){ if(pendingPinResolve) pendingPinResolve(); }
+  else { toast('Wrong PIN'); }
+}
+function enterRole(role){
+  currentRole = role;
+  document.getElementById('launch').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  const chip = document.getElementById('roleChip');
+  const labels = {admin:'Admin',collector:'Collector',teacher:'Teacher'};
+  chip.textContent = labels[role]||role;
+  applyTheme(); paintIcons();
+  document.querySelectorAll('.roleview').forEach(v=>v.classList.add('hidden'));
+  document.getElementById('role-'+role).classList.remove('hidden');
+  if(role==='admin') switchA('adash');
+  else if(role==='collector') renderSearch();
+  else if(role==='teacher') switchT('tdash');
+}
+function lockSession(){ goLaunch(); }
+function goLaunch(){
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('launch').classList.remove('hidden');
+  currentRole = null;
+}
+
+/* ---------- generic UI ---------- */
+function openModal(id){ document.getElementById(id).classList.add('on'); }
+function closeModal(id){ document.getElementById(id).classList.remove('on'); }
+function switchA(v){ document.querySelectorAll('[data-av]').forEach(t=>t.classList.toggle('on', t.getAttribute('data-av')===v));
+  document.querySelectorAll('#role-admin .view').forEach(x=>x.classList.remove('on')); document.getElementById('av-'+v).classList.add('on');
+  if(v==='adash') renderAdminDash(); if(v==='astu') renderStudents(); if(v==='atem') renderTemplates(); if(v==='aset') renderAdminSettings(); }
+function switchT(v){ document.querySelectorAll('[data-tv]').forEach(t=>t.classList.toggle('on', t.getAttribute('data-tv')===v));
+  document.querySelectorAll('#role-teacher .view').forEach(x=>x.classList.remove('on')); document.getElementById('tv-'+v).classList.add('on');
+  if(v==='tdash') renderTeacherDash(); if(v==='tstu') renderTeacherStudents(); }
+let toastTimer=null;
+function toast(msg){ const t=document.getElementById('toast'); if(!t){return;} t.textContent=msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'),1800); }
+function money(n){ return 'GH₵ '+ (Number(n)||0).toLocaleString('en-GH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d){ try{ return new Date(d).toLocaleDateString('en-GB'); }catch(e){ return d; } }
+function genId(prefix){ return prefix + '-' + Math.random().toString(36).slice(2,8).toUpperCase(); }
+
+/* ---------- Admin: dashboard ---------- */
+function totals(){
+  let expected = DB.feeTemplates.reduce((s,t)=>s+(Number(t.totalFee)||0),0);
+  let collected = DB.feeTransactions.reduce((s,tx)=>s+(Number(tx.amountPaid)||0),0);
+  let outstanding = expected - collected;
+  return { expected, collected, outstanding };
+}
+function defaulters(){ return DB.students.filter(s=>(Number(s.currentBalance)||0)>0); }
+function renderAdminDash(){
+  const t = totals();
+  const def = defaulters();
+  document.getElementById('adminDash').innerHTML =
+    '<div class="grid cards" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">'
+    + kpi(money(t.expected),'Total Expected Revenue')
+    + kpi(money(t.collected),'Total Collected')
+    + kpi(money(t.outstanding),'Outstanding Debt')
+    + kpi(def.length+'','Defaulters')
+    + '</div>'
+    + '<h3 style="margin:18px 0 8px">Defaulters (balance > 0)</h3>'
+    + defaultersTable(def);
+}
+function kpi(n,l){ return '<div class="kpi"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
+function defaultersTable(list){
+  if(!list.length) return '<p class="muted">No defaulters. All accounts settled. 🎉</p>';
+  let rows = list.map(s=>'<tr><td>'+esc(s.fullName)+'</td><td>'+esc(s.class)+'</td><td>'+money(s.currentBalance)+'</td><td><span class="pill due">Owes</span></td></tr>').join('');
+  return '<table><thead><tr><th>Student</th><th>Class</th><th>Balance</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function renderTeacherDash(){
+  const t = totals(); const def = defaulters();
+  document.getElementById('teacherDash').innerHTML =
+    '<div class="grid cards" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">'
+    + kpi(money(t.expected),'Total Expected') + kpi(money(t.collected),'Total Collected') + kpi(money(t.outstanding),'Outstanding') + kpi(def.length+'','Defaulters')
+    + '</div>' + '<h3 style="margin:18px 0 8px">Defaulters</h3>' + defaultersTable(def);
+}
+
+/* ---------- Admin: students ---------- */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function openStudentForm(){
+  const sel = document.getElementById('sTemplate');
+  sel.innerHTML = '<option value="">— No opening fee —</option>' + DB.feeTemplates.map(t=>'<option value="'+esc(t.templateName)+'">'+esc(t.templateName)+' ('+money(t.totalFee)+')</option>').join('');
+  openModal('studentModal');
+}
+function saveStudent(){
+  const name = document.getElementById('sName').value.trim();
+  if(!name){ toast('Name required'); return; }
+  const tplName = document.getElementById('sTemplate').value;
+  const tpl = DB.feeTemplates.find(t=>t.templateName===tplName);
+  const opening = tpl ? (Number(tpl.totalFee)||0) : 0;
+  const s = {
+    studentId: genId('SCH'),
+    fullName: name,
+    class: document.getElementById('sClass').value.trim(),
+    guardianName: document.getElementById('sGuardian').value.trim(),
+    guardianPhone: document.getElementById('sPhone').value.trim(),
+    guardianEmail: document.getElementById('sEmail').value.trim(),
+    currentBalance: opening,
+    totalPaidThisTerm: 0,
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  };
+  DB.students.push(s);
+  save();
+  closeModal('studentModal');
+  ['sName','sClass','sGuardian','sPhone','sEmail'].forEach(id=>document.getElementById(id).value='');
+  renderStudents(); renderAdminDash();
+  toast('Student added' + (opening? ' with opening balance '+money(opening):''));
+}
+function renderStudents(){
+  const el = document.getElementById('studentList');
+  if(!DB.students.length){ el.innerHTML='<p class="muted">No students yet. Add one to begin.</p>'; return; }
+  el.innerHTML = '<table><thead><tr><th>ID</th><th>Name</th><th>Class</th><th>Balance</th><th>Status</th></tr></thead><tbody>'
+    + DB.students.map(s=>'<tr><td>'+esc(s.studentId)+'</td><td>'+esc(s.fullName)+'</td><td>'+esc(s.class)+'</td><td>'+money(s.currentBalance)+'</td><td><span class="pill '+(s.status==='Active'?'active':'suspended')+'">'+esc(s.status)+'</span></td></tr>').join('')
+    + '</tbody></table>';
+}
+function renderTeacherStudents(){
+  const el = document.getElementById('teacherStudents');
+  if(!DB.students.length){ el.innerHTML='<p class="muted">No students yet.</p>'; return; }
+  el.innerHTML = '<table><thead><tr><th>Name</th><th>Class</th><th>Balance</th></tr></thead><tbody>'
+    + DB.students.map(s=>'<tr><td>'+esc(s.fullName)+'</td><td>'+esc(s.class)+'</td><td>'+money(s.currentBalance)+'</td></tr>').join('') + '</tbody></table>';
+}
+
+/* ---------- Admin: fee templates ---------- */
+function openTemplateForm(){
+  document.getElementById('tItems').innerHTML = templateRow('Tuition', 2500);
+  recalcTemplate();
+  openModal('templateModal');
+}
+function templateRow(n,a){ return '<div class="itemrow"><input placeholder="Item name" value="'+esc(n)+'"><input type="number" placeholder="Amount" value="'+esc(a)+'"></div>'; }
+function tAddRow(){ const c=document.getElementById('tItems'); c.insertAdjacentHTML('beforeend', templateRow('','')); }
+function recalcTemplate(){
+  let total=0; document.querySelectorAll('#tItems .itemrow').forEach(r=>{ total += Number(r.querySelectorAll('input')[1].value)||0; });
+  document.getElementById('tTotal').textContent = 'Total: '+money(total);
+}
+document.getElementById('tItems').addEventListener('input', recalcTemplate);
+function saveTemplate(){
+  const name = document.getElementById('tName').value.trim();
+  if(!name){ toast('Template name required'); return; }
+  const items=[]; let total=0;
+  document.querySelectorAll('#tItems .itemrow').forEach(r=>{
+    const ins=r.querySelectorAll('input'); const nm=ins[0].value.trim(); const amt=Number(ins[1].value)||0;
+    if(nm){ items.push({name:nm,amount:amt}); total+=amt; }
+  });
+  DB.feeTemplates.push({ templateName:name, items, totalFee: total });
+  save(); closeModal('templateModal'); renderTemplates(); renderAdminDash();
+  toast('Template saved: '+money(total));
+}
+function renderTemplates(){
+  const el=document.getElementById('templateList');
+  el.innerHTML = DB.feeTemplates.map(t=>'<div class="ticket"><div class="top"><span class="tt">'+esc(t.templateName)+'</span><span class="pr" style="font-weight:800">'+money(t.totalFee)+'</span></div>'
+    + t.items.map(i=>'<div class="line"><span>'+esc(i.name)+'</span><span>'+money(i.amount)+'</span></div>').join('') + '</div>').join('');
+}
+function renderAdminSettings(){
+  const p = DB.settings.pins;
+  document.getElementById('adminSet').innerHTML =
+    '<div class="ticket"><h3 style="margin-top:0">PINs</h3>'
+    + pinRow('admin','Admin') + pinRow('collector','Collector') + pinRow('teacher','Teacher')
+    + '<button class="btn sm" onclick="savePins()">Save PINs</button></div>'
+    + '<p class="small muted" style="margin-top:12px">Offline-first: all data is stored on this device only. Phase 2 will add cloud sync + auto WhatsApp receipts.</p>';
+}
+function pinRow(role,label){ return '<div class="row"><span style="width:90px">'+label+'</span><input id="pin_'+role+'" value="'+esc(DB.settings.pins[role]||'0000')+'" maxlength="4" style="max-width:120px"></div>'; }
+function savePins(){
+  ['admin','collector','teacher'].forEach(r=>{ const v=document.getElementById('pin_'+r).value.trim(); if(v) DB.settings.pins[r]=v; });
+  save(); toast('PINs saved');
+}
+
+/* ---------- Collector: search + pay ---------- */
+function renderSearch(){
+  const q = (document.getElementById('searchBox').value||'').toLowerCase().trim();
+  const el = document.getElementById('searchResults');
+  if(!q){ el.innerHTML='<p class="muted">Type a student name, ID or class to find them.</p>'; return; }
+  const matches = DB.students.filter(s=>
+    (s.fullName||'').toLowerCase().includes(q) || (s.studentId||'').toLowerCase().includes(q) || (s.class||'').toLowerCase().includes(q)
+  );
+  if(!matches.length){ el.innerHTML='<p class="muted">No students match "'+esc(q)+'".</p>'; return; }
+  el.innerHTML = matches.map(s=>{
+    const owes = Number(s.currentBalance)||0;
+    const cls = owes>0?'owes':'owes clear';
+    return '<div class="ticket"><div class="top"><span class="tt">'+esc(s.fullName)+'</span><span class="'+cls+'">Owes: '+money(owes)+'</span></div>'
+      + '<div class="line"><span>ID</span><span>'+esc(s.studentId)+'</span></div>'
+      + '<div class="line"><span>Class</span><span>'+esc(s.class)+'</span></div>'
+      + '<div class="line"><span>Guardian</span><span>'+esc(s.guardianName)+'</span></div>'
+      + '<div class="line"><span>Paid this term</span><span>'+money(s.totalPaidThisTerm)+'</span></div>'
+      + '<div class="row" style="margin-top:10px"><button class="btn green" onclick="openPay(\''+esc(s.studentId)+'\')">Record Payment</button></div>'
+      + '</div>';
+  }).join('');
+}
+function openPay(id){
+  const s = DB.students.find(x=>x.studentId===id); if(!s) return;
+  activeStudentId = id;
+  document.getElementById('payStudent').textContent = s.fullName + ' · ' + s.class + ' · balance ' + money(s.currentBalance);
+  document.getElementById('payAmount').value = (Number(s.currentBalance)>0? s.currentBalance : '');
+  openModal('payModal');
+}
+function recordPayment(){
+  const s = DB.students.find(x=>x.studentId===activeStudentId); if(!s) return;
+  const amt = Number(document.getElementById('payAmount').value)||0;
+  if(amt<=0){ toast('Enter an amount'); return; }
+  const method = document.getElementById('payMethod').value;
+  s.currentBalance = Math.max(0, (Number(s.currentBalance)||0) - amt);
+  s.totalPaidThisTerm = (Number(s.totalPaidThisTerm)||0) + amt;
+  const tx = {
+    transactionId: genId('TX'),
+    studentId: s.studentId,
+    amountPaid: amt,
+    paymentMethod: method,
+    itemsPaidFor: [],
+    recordedBy: currentRole,
+    timestamp: new Date().toISOString()
+  };
+  DB.feeTransactions.push(tx);
+  save();
+  closeModal('payModal');
+  lastReceipt = buildReceipt(s, tx);
+  document.getElementById('receiptBody').innerHTML = lastReceipt.html;
+  document.getElementById('receiptBody').setAttribute('data-phone', s.guardianPhone||'');
+  openModal('receiptModal');
+  renderSearch(); if(currentRole==='admin') renderAdminDash();
+  toast('Payment recorded · balance '+money(s.currentBalance));
+}
+
+/* ---------- Feature C: WhatsApp receipt (wa.me) + print fallback ---------- */
+function buildReceipt(s, tx){
+  const text =
+    SCHOOL_NAME + '\n' +
+    'Receipt for ' + s.fullName + '\n' +
+    'Amount Paid: GHS ' + (Number(tx.amountPaid)||0).toLocaleString('en-GH') + '\n' +
+    'Remaining Balance: GHS ' + (Number(s.currentBalance)||0).toLocaleString('en-GH') + '\n' +
+    'Date: ' + fmtDate(tx.timestamp) + '\n' +
+    'Method: ' + tx.paymentMethod + '\n' +
+    'Thank you!';
+  const html =
+    '<div style="border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px"><b>'+esc(SCHOOL_NAME)+'</b></div>'
+    + '<div class="line"><span>Student</span><span>'+esc(s.fullName)+'</span></div>'
+    + '<div class="line"><span>Class</span><span>'+esc(s.class)+'</span></div>'
+    + '<div class="line"><span>Amount Paid</span><span>'+money(tx.amountPaid)+'</span></div>'
+    + '<div class="line"><span>Method</span><span>'+esc(tx.paymentMethod)+'</span></div>'
+    + '<div class="line"><span>Remaining Balance</span><span>'+money(s.currentBalance)+'</span></div>'
+    + '<div class="line"><span>Date</span><span>'+esc(fmtDate(tx.timestamp))+'</span></div>'
+    + '<p class="small muted" style="margin-top:8px">Thank you!</p>';
+  return { text, html };
+}
+function sendWhatsAppReceipt(){
+  const phone = document.getElementById('receiptBody').getAttribute('data-phone')||'';
+  if(!phone){ toast('No guardian phone on file'); return; }
+  const digits = phone.replace(/[^0-9]/g,'');
+  const wa = 'https://wa.me/' + digits + '?text=' + encodeURIComponent(lastReceipt.text);
+  window.open(wa, '_blank');
+}
+function printReceipt(){ window.print(); }
+
+/* ---------- boot ---------- */
+applyTheme(); paintIcons();
+// auto-open app if already authed this session? keep simple: always start at launch
+</script>
+<div class="toast" id="toast"></div>
+</body>
+</html>
